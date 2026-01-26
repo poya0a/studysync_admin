@@ -9,7 +9,7 @@ export default function NotFound() {
             <div className={styles.goToHome}>
                 <Link
                 className={styles.homeButton}
-                href="https://studysync-two.vercel.app"
+                href="https://studysync-admin.vercel.app"
                 >
                 홈으로
                 </Link>
