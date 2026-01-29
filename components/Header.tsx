@@ -24,7 +24,7 @@ export default function Header() {
             console.error("로그아웃 실패", error);
         };
     };
-console.log(userData)
+    
     return (
         <header className={styles.header}>
             <div className={styles.container}>

@@ -37,10 +37,6 @@ export async function GET(req: NextRequest) {
             query = query.where("uid", "==", uid);
         }
 
-        query = query
-            .orderBy("createdAt", "desc")
-            .orderBy(admin.firestore.FieldPath.documentId(), "desc");
-
         if (cursor) {
             query = query.startAfter(
                 new Date(cursor.createdAt),

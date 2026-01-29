@@ -1,9 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
+import { auth } from "@/lib/firebase/client";
 import type { UserData } from "@/types";
 
-export async function fetchMe(): Promise<UserData | null> {
+export async function fetchUser(): Promise<UserData | null> {
+    const user = auth.currentUser;
+    if (!user) return null;
+
+    const token = await user.getIdToken();
+
     const res = await fetch("/api/user", {
-        credentials: "include",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
     });
 
     if (!res.ok) {
@@ -17,7 +25,7 @@ export async function fetchMe(): Promise<UserData | null> {
 export function useUserQuery() {
     return useQuery<UserData | null>({
         queryKey: ["user"],
-        queryFn: fetchMe,
+        queryFn: fetchUser,
         staleTime: Infinity,
         retry: false,
     });

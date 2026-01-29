@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAuth } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
+import { useUserQuery } from "@/hooks/useUserQuery";
 import type { Event } from "@/types";
 
 type EventsResponse = {
@@ -9,11 +10,14 @@ type EventsResponse = {
 };
 
 export function useEventsQuery(cursor: string | null) {
+    const { data: userData } = useUserQuery();
     return useQuery<EventsResponse>({
         queryKey: ["events", cursor],
         queryFn: async () => {
-            const auth = getAuth();
-            const token = await auth.currentUser?.getIdToken();
+            const user = auth.currentUser;
+            if (!user) return null;
+
+            const token = await user.getIdToken();
 
             const res = await fetch(
                 `/api/events${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
@@ -30,5 +34,6 @@ export function useEventsQuery(cursor: string | null) {
 
             return res.json();
         },
+        enabled: !!userData,
     });
 }

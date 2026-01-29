@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         const { role } = userSnap.data() as { role: string };
 
         if (role !== "SUPER_ADMIN" && role !== "ADMIN") {
-            return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+            return NextResponse.json({ data: [], hasNextPage: false });
         }
 
         const { searchParams } = new URL(req.url);
@@ -38,9 +38,7 @@ export async function GET(req: NextRequest) {
             : null;
 
         let query: Query = adminDb
-            .collection("users")
-            .orderBy("createdAt", "desc")
-            .orderBy(admin.firestore.FieldPath.documentId(), "desc");
+            .collection("users");
 
         if (cursor) {
             query = query.startAfter(

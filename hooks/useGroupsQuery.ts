@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAuth } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
+import { useUserQuery } from "@/hooks/useUserQuery";
 import type { Group } from "@/types";
 
 type GroupsResponse = {
@@ -9,15 +10,14 @@ type GroupsResponse = {
 };
 
 export function useGroupsQuery(cursor: string | null) {
+    const { data: userData } = useUserQuery();
     return useQuery<GroupsResponse>({
         queryKey: ["groups", cursor],
         queryFn: async () => {
-            const auth = getAuth();
-            const token = await auth.currentUser?.getIdToken();
+            const user = auth.currentUser;
+            if (!user) return null;
 
-            if (!token) {
-                throw new Error("Not authenticated");
-            }
+            const token = await user.getIdToken();
 
             const url = cursor
                 ? `/api/groups?cursor=${encodeURIComponent(cursor)}`
@@ -35,5 +35,6 @@ export function useGroupsQuery(cursor: string | null) {
 
             return res.json();
         },
+        enabled: !!userData,
     });
 }

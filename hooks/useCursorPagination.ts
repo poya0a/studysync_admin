@@ -2,28 +2,25 @@ import { useState } from "react";
 
 export function useCursorPagination() {
     const [page, setPage] = useState(1);
-    const [cursors, setCursors] = useState<Record<number, string | null>>({
-        1: null,
-    });
+    const [cursor, setCursor] = useState<string | null>(null);
 
-    const movePage = (nextPage: number, nextCursor?: string | null) => {
-        if (nextPage < 1) return;
-
-        if (nextPage > page && nextCursor) {
-            setCursors(prev => ({
-                ...prev,
-                [nextPage]: nextCursor,
-            }));
-        }
-
-        setPage(nextPage);
+    const movePage = (newPage: number, nextCursor: string | null) => {
+        setPage(newPage);
+        setCursor(nextCursor);
     };
 
-    const getCursor = () => cursors[page] ?? null;
+    const getCursor = () => cursor;
+
+    const reset = () => {
+        setPage(1);
+        setCursor(null);
+    };
 
     return {
         page,
+        cursor,
         movePage,
         getCursor,
+        reset,
     };
 }

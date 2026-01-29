@@ -31,7 +31,7 @@ export default function AdminPage() {
     const [open, setOpen] = useState<boolean>(false);
     const ref = useRef<HTMLDivElement>(null);
 
-    const [errorMessage, setErrorMessage] = useState<string>("");
+    // const [errorMessage, setErrorMessage] = useState<string>("");
     const [showAlert, setShowAlert] = useState<string>("");
     const [confirmAlert, setConfirmAlert] = useState<ConfirmAlertState>({
         open: false,
@@ -44,11 +44,23 @@ export default function AdminPage() {
     const groupsPagination = useCursorPagination();
     const eventsPagination = useCursorPagination();
 
-    const { data: userListData } = useUserListQuery(userListPagination.getCursor());
+    const { data: userListData, refetch: refetchUserList } = useUserListQuery(userListPagination.getCursor());
 
-    const { data: groupsData } = useGroupsQuery(groupsPagination.getCursor());
+    const { data: groupsData, refetch: refetchGroups } = useGroupsQuery(groupsPagination.getCursor());
 
-    const { data: eventsData } = useEventsQuery(eventsPagination.getCursor());
+    const { data: eventsData, refetch: refetchEvents } = useEventsQuery(eventsPagination.getCursor());
+
+    useEffect(() => {
+        if (!userData) {
+            userListPagination.reset();
+            groupsPagination.reset();
+            eventsPagination.reset();
+
+            refetchUserList();
+            refetchGroups();
+            refetchEvents();
+        }
+    }, [userData]);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {

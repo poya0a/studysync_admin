@@ -18,8 +18,11 @@ export function initAuthListener() {
             },
         });
 
-        queryClient.invalidateQueries({
-            queryKey: ["user"],
+        const userDataRes = await fetch("/api/user", {
+            headers: { Authorization: `Bearer ${token}` },
         });
+        const userData = await userDataRes.json();
+
+        queryClient.setQueryData(["user"], userData);
     });
 }
