@@ -9,21 +9,22 @@ type UserListResponse = {
     hasNextPage: boolean;
 };
 
-export function useUserListQuery(cursor: string | null) {
+export function useUserListQuery(cursor: string | null, keyword: string | null) {
     const { data: userData } = useUserQuery();
     return useQuery<UserListResponse>({
-        queryKey: ["userList", cursor],
+        queryKey: ["userList", cursor, keyword],
         queryFn: async () => {
             const user = auth.currentUser;
             if (!user) return null;
 
             const token = await user.getIdToken();
 
-            const url = cursor
-                ? `/api/users?cursor=${encodeURIComponent(cursor)}`
-                : `/api/users`;
-
-            const res = await fetch(url, {
+            const res = await fetch(
+                `/api/users
+                ${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}
+                ${cursor && keyword ? "&" : keyword ? "?" : ""}
+                ${keyword ? `keyword=${keyword}` : ""}`,
+                {
                 headers: {
                 Authorization: `Bearer ${token}`,
                 },

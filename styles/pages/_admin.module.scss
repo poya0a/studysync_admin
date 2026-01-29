@@ -23,6 +23,13 @@
     font-weight: 600;
 }
 
+.infoMessage {
+    text-align: center;
+    margin: 0;
+    height: calc(100dvh - 270px);
+    line-height: calc(100dvh - 270px);
+}
+
 .selectContainer {
     margin: 40px 0;
     display: flex;

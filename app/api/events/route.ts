@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
         const { role } = userSnap.data() as { role: string };
 
         const { searchParams } = new URL(req.url);
+        const keyword = searchParams.get("keyword")?.toLowerCase() || "";
         const cursorParam = searchParams.get("cursor");
 
         const cursor = cursorParam

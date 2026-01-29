@@ -9,21 +9,22 @@ type GroupsResponse = {
     hasNextPage: boolean;
 };
 
-export function useGroupsQuery(cursor: string | null) {
+export function useGroupsQuery(cursor: string | null, keyword: string | null) {
     const { data: userData } = useUserQuery();
     return useQuery<GroupsResponse>({
-        queryKey: ["groups", cursor],
+        queryKey: ["groups", cursor, keyword],
         queryFn: async () => {
             const user = auth.currentUser;
             if (!user) return null;
 
             const token = await user.getIdToken();
 
-            const url = cursor
-                ? `/api/groups?cursor=${encodeURIComponent(cursor)}`
-                : `/api/groups`;
-
-            const res = await fetch(url, {
+            const res = await fetch(
+                `/api/groups
+                ${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}
+                ${cursor && keyword ? "&" : keyword ? "?" : ""}
+                ${keyword ? `keyword=${keyword}` : ""}`,
+                {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

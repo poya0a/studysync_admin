@@ -13,11 +13,36 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import styles from "@/styles/pages/_admin.module.scss";
 
-const selectList = [
-    "사용자",
-    "그룹",
-    "일정"
+const adminSelectListData = [
+    {
+        id: "users",
+        name: "사용자"
+    },
+    {
+        id: "groups",
+        name: "그룹"
+    },
+    {
+        id: "events",
+        name: "일정"
+    },
 ];
+
+const userSelectListData = [
+    {
+        id: "groups",
+        name: "그룹"
+    },
+    {
+        id: "events",
+        name: "일정"
+    },
+];
+
+type SelectType = {
+    id: string;
+    name: string;
+};
 
 type ConfirmAlertState = {
     open: boolean;
@@ -26,7 +51,20 @@ type ConfirmAlertState = {
 };
 
 export default function AdminPage() {
-    const [selectSearch, setSelectSearch] = useState<string>(selectList[0]);
+    const { data: userData } = useUserQuery();
+
+    const userListPagination = useCursorPagination();
+    const groupsPagination = useCursorPagination();
+    const eventsPagination = useCursorPagination();
+
+    const { data: userListData, refetch: refetchUserList } = useUserListQuery(userListPagination.getCursor(), null);
+
+    const { data: groupsData, refetch: refetchGroups } = useGroupsQuery(groupsPagination.getCursor(), null);
+
+    const { data: eventsData, refetch: refetchEvents } = useEventsQuery(eventsPagination.getCursor(), null);
+
+    const [selectList] = useState<SelectType[]>(userData?.role === "USER" ? userSelectListData : adminSelectListData);
+    const [selectSearch, setSelectSearch] = useState<SelectType>(selectList[0]);
     const [keyword, setKeyword] = useState<string>("");
     const [open, setOpen] = useState<boolean>(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -38,17 +76,17 @@ export default function AdminPage() {
         message: "",
     });
 
-    const { data: userData } = useUserQuery();
+    useEffect(() => {
+        if (!userData) {
+            userListPagination.reset();
+            groupsPagination.reset();
+            eventsPagination.reset();
 
-    const userListPagination = useCursorPagination();
-    const groupsPagination = useCursorPagination();
-    const eventsPagination = useCursorPagination();
-
-    const { data: userListData, refetch: refetchUserList } = useUserListQuery(userListPagination.getCursor());
-
-    const { data: groupsData, refetch: refetchGroups } = useGroupsQuery(groupsPagination.getCursor());
-
-    const { data: eventsData, refetch: refetchEvents } = useEventsQuery(eventsPagination.getCursor());
+            refetchUserList();
+            refetchGroups();
+            refetchEvents();
+        }
+    }, [userData]);
 
     useEffect(() => {
         if (!userData) {
@@ -95,36 +133,40 @@ export default function AdminPage() {
                     <p className={styles.subtitle}>스터디 일정 관리 캘린더 관리자</p>
                 </div>
                 
-                <div className={styles.selectContainer}>
-                    <div className={styles.select} ref={ref}>
-                        <button
-                            type="button"
-                            className={styles.trigger}
-                            onClick={() => setOpen((v) => !v)}
-                        >
-                            {selectSearch}
-                            <span className={styles.arrow}></span>
-                        </button>
+                {!userData && <p className={styles.infoMessage}>로그인 후 이용 가능합니다.</p> }
+                {userData && 
+                    <div className={styles.selectContainer}>
+                        <div className={styles.select} ref={ref}>
+                            <button
+                                type="button"
+                                className={styles.trigger}
+                                onClick={() => setOpen((v) => !v)}
+                            >
+                                {selectSearch.name}
+                                <span className={styles.arrow}></span>
+                            </button>
 
-                        {open && (
-                            <ul className={styles.dropdown}>
-                                {selectList.map((item, i) => (
-                                    <li
-                                        key={`search-select-${i}`}
-                                        className={selectSearch === item ? styles.active : ""}
-                                        onClick={() => {
-                                            setSelectSearch(item);
-                                            setOpen(false);
-                                        }}
-                                    >
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                            {open && (
+                                <ul className={styles.dropdown}>
+                                    {selectList.map((item, i) => (
+                                        <li
+                                            key={`search-select-${i}`}
+                                            className={selectSearch.id === item.id ? styles.active : ""}
+                                            onClick={() => {
+                                                setSelectSearch(item);
+                                                setOpen(false);
+                                            }}
+                                        >
+                                            {item.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                        <input className={styles.searchInput} placeholder="검색" value={keyword} onChange={e => setKeyword(e.target.value)} />
                     </div>
-                    <input className={styles.searchInput} placeholder="검색" value={keyword} onChange={e => setKeyword(e.target.value)} />
-                </div>
+                }
+                
 
                 {(userData?.role === "SUPER_ADMIN" || userData?.role === "ADMIN") && userListData?.data &&
                     <DataTable

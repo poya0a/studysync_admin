@@ -9,10 +9,10 @@ type EventsResponse = {
     hasNextPage: boolean;
 };
 
-export function useEventsQuery(cursor: string | null) {
+export function useEventsQuery(cursor: string | null, keyword: string | null) {
     const { data: userData } = useUserQuery();
     return useQuery<EventsResponse>({
-        queryKey: ["events", cursor],
+        queryKey: ["events", cursor, keyword],
         queryFn: async () => {
             const user = auth.currentUser;
             if (!user) return null;
@@ -20,7 +20,10 @@ export function useEventsQuery(cursor: string | null) {
             const token = await user.getIdToken();
 
             const res = await fetch(
-                `/api/events${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
+                `/api/events
+                ${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}
+                ${cursor && keyword ? "&" : keyword ? "?" : ""}
+                ${keyword ? `keyword=${keyword}` : ""}`,
                 {
                 headers: {
                     Authorization: `Bearer ${token}`,

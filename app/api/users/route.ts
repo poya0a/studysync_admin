@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
         }
 
         const { searchParams } = new URL(req.url);
+        const keyword = searchParams.get("keyword")?.toLowerCase() || "";
         const cursorParam = searchParams.get("cursor");
 
         const cursor = cursorParam
