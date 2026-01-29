@@ -15,17 +15,23 @@ export const groupColumns: ColumnDef<Group>[] = [
         accessorKey: "inviteCode",
     },
     {
-        header: "소유자 UID",
-        accessorKey: "ownerId",
-    },
-    {
         header: "멤버 수",
         accessorKey: "members",
-        cell: ({ getValue }) => (getValue() as string[]).length,
+        cell: ({ getValue }) => {
+            const members = getValue() as string[] | undefined;
+            return members?.length ?? 0;
+        },
     },
     {
         header: "생성일",
         accessorKey: "createdAt",
-        cell: ({ getValue }) => new Date(getValue() as string).toLocaleDateString(),
+        cell: ({ getValue }) => {
+            const ts = getValue() as number;
+            const d = new Date(ts);
+
+            return `${d.getFullYear()}-${String(
+                d.getMonth() + 1
+            ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        },
     },
 ];

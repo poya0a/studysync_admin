@@ -1,16 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAuth } from "firebase/auth";
-import type { Group } from "@/types";
+import type { UserData } from "@/types";
 
-type GroupsResponse = {
-    data: Group[];
+type UserListResponse = {
+    data: UserData[];
     nextCursor: string | null;
     hasNextPage: boolean;
 };
 
-export function useGroupsQuery(cursor: string | null) {
-    return useQuery<GroupsResponse>({
-        queryKey: ["groups", cursor],
+export function useUserListQuery(cursor: string | null) {
+    return useQuery<UserListResponse>({
+        queryKey: ["userList", cursor],
         queryFn: async () => {
             const auth = getAuth();
             const token = await auth.currentUser?.getIdToken();
@@ -20,17 +20,17 @@ export function useGroupsQuery(cursor: string | null) {
             }
 
             const url = cursor
-                ? `/api/groups?cursor=${encodeURIComponent(cursor)}`
-                : `/api/groups`;
+                ? `/api/users?cursor=${encodeURIComponent(cursor)}`
+                : `/api/users`;
 
             const res = await fetch(url, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
                 },
             });
 
             if (!res.ok) {
-                throw new Error("Failed to fetch groups");
+                throw new Error("Failed to fetch users");
             }
 
             return res.json();

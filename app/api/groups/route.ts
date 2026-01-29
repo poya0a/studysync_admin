@@ -1,0 +1,87 @@
+export const runtime = "nodejs";
+
+import { NextRequest, NextResponse } from "next/server";
+import type { Query } from "firebase-admin/firestore";
+import admin from "firebase-admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
+import { decodeCursor, encodeCursor } from "@/lib/cursor";
+
+const PAGE_SIZE = 10;
+
+export async function GET(req: NextRequest) {
+    try {
+        const authHeader = req.headers.get("authorization");
+        if (!authHeader?.startsWith("Bearer ")) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        const decoded = await adminAuth.verifyIdToken(token);
+        const uid = decoded.uid;
+
+        const userSnap = await adminDb.collection("users").doc(uid).get();
+        if (!userSnap.exists) {
+            return NextResponse.json({ message: "User not found" }, { status: 403 });
+        }
+
+        const { role } = userSnap.data() as { role: string };
+
+        const { searchParams } = new URL(req.url);
+        const cursorParam = searchParams.get("cursor");
+
+        const cursor = cursorParam
+            ? decodeCursor(cursorParam)
+            : null;
+
+        let query: Query = adminDb.collection("groups");
+
+        if (role !== "SUPER_ADMIN" && role !== "ADMIN") {
+            query = query.where("members", "array-contains", uid);
+        }
+
+        query = query
+            .orderBy("createdAt", "desc")
+            .orderBy(admin.firestore.FieldPath.documentId(), "desc");
+
+        if (cursor) {
+            query = query.startAfter(
+                new Date(cursor.createdAt),
+                cursor.id
+            );
+        }
+
+        query = query.limit(PAGE_SIZE);
+
+        const snap = await query.get();
+
+        const data = snap.docs.map(doc => {
+            const d = doc.data();
+            return {
+                id: doc.id,
+                ownerId: d.ownerId,
+                name: d.name,
+                inviteCode: d.inviteCode,
+                members: d.members ?? [],
+                createdAt: d.createdAt.toDate().getTime(),
+            };
+        });
+
+        const lastDoc = snap.docs.at(-1);
+
+        const nextCursor = lastDoc
+            ? encodeCursor({
+                createdAt: lastDoc.get("createdAt").toDate().getTime(),
+                id: lastDoc.id,
+                })
+            : null;
+
+        return NextResponse.json({
+            data,
+            nextCursor,
+            hasNextPage: snap.size === PAGE_SIZE,
+        });
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({ message: "Server error" }, { status: 500 });
+    }
+}

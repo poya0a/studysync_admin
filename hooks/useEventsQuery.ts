@@ -1,11 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchEvents } from "@/services/events";
+import { getAuth } from "firebase/auth";
 import type { Event } from "@/types";
 
-export function useEventsQuery(page: number, size = 10, keyword?: string) {
-    return useQuery<{ data: Event[]; total: number }>({
-        queryKey: ["events", page, size, keyword],
-        queryFn: () => fetchEvents(page, size, keyword),
-        // keepPreviousData: true,
+type EventsResponse = {
+    data: Event[];
+    nextCursor: string | null;
+    hasNextPage: boolean;
+};
+
+export function useEventsQuery(cursor: string | null) {
+    return useQuery<EventsResponse>({
+        queryKey: ["events", cursor],
+        queryFn: async () => {
+            const auth = getAuth();
+            const token = await auth.currentUser?.getIdToken();
+
+            const res = await fetch(
+                `/api/events${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
+                {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error("Failed to fetch events");
+            }
+
+            return res.json();
+        },
     });
 }

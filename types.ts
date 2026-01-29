@@ -1,30 +1,37 @@
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "USER";
+export type GroupType = "personal" | "group";
+
+export type UserData = {
+    uid: string | null;
+    name: string | null;
+    email: string | null;
+    role: UserRole;
+    createdAt: number;
+    lastLogin: number;
+};
+
 export type EventBase = {
+    uid: string;
+    groupId: string | "PERSONAL";
     title: string;
     date: string;
     color: string;
 };
 
-export type PersonalEventInput = EventBase & {
-    uid: string;
-    groupId: null;
-};
-
-export type GroupEventInput = EventBase & {
-    uid: string;
-    groupId: string;
-};
-
-export type EventInput = PersonalEventInput | GroupEventInput;
-
-export type Event = EventInput & {
+export type Event = EventBase & {
     id: string;
+    authorName?: string;
 };
 
-export interface Group {
+export type Group = {
     id: string;
     name: string;
-    inviteCode: string;
-    ownerId: string;
-    members: string[];
-    createdAt: Date;
-}
+    type: GroupType;
+    inviteCode?: string;
+};
+
+export const PERSONAL_GROUP: Group = {
+    id: "PERSONAL",
+    name: "개인 일정",
+    type: "personal",
+};
