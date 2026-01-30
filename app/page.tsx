@@ -9,6 +9,7 @@ import { userListColumns } from "@/components/DataTable/userList.columns";
 import { groupColumns } from "@/components/DataTable/group.columns";
 import { eventColumns } from "@/components/DataTable/event.columns";
 import DataTable from "@/components/DataTable";
+import Dashboard from "@/components/AdminDashboard/Dashboard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import styles from "@/styles/pages/_admin.module.scss";
@@ -235,6 +236,11 @@ export default function AdminPage() {
                         hasNextPage={eventsData.hasNextPage}
                     />
                 }
+
+                {userData && userData?.role !== "USER" && (
+                    <Dashboard role={userData.role} />
+                )}
+
             </div>
             <Footer />
             {confirmAlert.open &&
