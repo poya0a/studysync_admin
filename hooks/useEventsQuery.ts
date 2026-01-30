@@ -18,12 +18,11 @@ export function useEventsQuery(cursor: string | null, keyword: string | null) {
             if (!user) return null;
 
             const token = await user.getIdToken();
+            const queryParams = new URLSearchParams();
+            if (cursor) queryParams.append("cursor", encodeURIComponent(cursor));
+            if (keyword) queryParams.append("keyword", keyword);
 
-            const res = await fetch(
-                `/api/events
-                ${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}
-                ${cursor && keyword ? "&" : keyword ? "?" : ""}
-                ${keyword ? `keyword=${keyword}` : ""}`,
+            const res = await fetch(`/api/events?${queryParams.toString()}`,
                 {
                 headers: {
                     Authorization: `Bearer ${token}`,

@@ -34,33 +34,37 @@ export default function DataTable<T>({ name, data, columns, page, setPage, hasNe
                 <p>총 {name}: {data?.length ?? 0}</p>
             </div>
             <div className={styles.container}>
-                <table className={styles.dataTable}>
-                    <thead>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                        <tr key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                            <th
-                                key={header.id}
-                            >
-                                {flexRender(header.column.columnDef.header, header.getContext())}
-                            </th>
+                { data.length > 0 ? 
+                    <table className={styles.dataTable}>
+                        <thead>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                            <tr key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                <th
+                                    key={header.id}
+                                >
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                </th>
+                                ))}
+                            </tr>
                             ))}
-                        </tr>
-                        ))}
-                    </thead>
+                        </thead>
 
-                    <tbody>
-                        {table.getRowModel().rows.map((row) => (
-                        <tr key={row.id}>
-                            {row.getVisibleCells().map((cell) => (
-                            <td key={cell.id}>
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
+                        <tbody>
+                            {table.getRowModel().rows.map((row) => (
+                            <tr key={row.id}>
+                                {row.getVisibleCells().map((cell) => (
+                                <td key={cell.id}>
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>
+                                ))}
+                            </tr>
                             ))}
-                        </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                    :
+                    <p>데이터가 없습니다.</p>
+                }
             </div>
             <div className={styles.pagination}>
                 {page > 1 &&

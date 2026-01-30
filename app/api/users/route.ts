@@ -2,7 +2,6 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import type { Query } from "firebase-admin/firestore";
-import admin from "firebase-admin";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { decodeCursor, encodeCursor } from "@/lib/cursor";
 
@@ -31,28 +30,41 @@ export async function GET(req: NextRequest) {
         }
 
         const { searchParams } = new URL(req.url);
-        const keyword = searchParams.get("keyword")?.toLowerCase() || "";
         const cursorParam = searchParams.get("cursor");
+        const keywordParam = searchParams.get("keyword");
 
         const cursor = cursorParam
             ? decodeCursor(cursorParam)
             : null;
 
+        const keyword = keywordParam
+            ? keywordParam.toLowerCase()
+            : null;
+
         let query: Query = adminDb
             .collection("users");
 
-        if (cursor) {
+        if (cursor && !keyword) {
             query = query.startAfter(
                 new Date(cursor.createdAt),
                 cursor.id
             );
         }
 
-        query = query.limit(PAGE_SIZE);
+        if (!keyword) {
+            query = query.limit(PAGE_SIZE);
+        }
 
         const snap = await query.get();
+        let docs = snap.docs;
 
-        const data = snap.docs.map(doc => {
+        if (keyword) {
+            docs = docs.filter(doc => {
+                return doc.data().name?.toLowerCase().includes(keyword) || doc.data().email?.toLowerCase().includes(keyword)
+            });
+        }
+
+        const data = docs.map(doc => {
             const d = doc.data();
             return {
                 uid: doc.id,

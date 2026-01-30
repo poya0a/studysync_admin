@@ -14,29 +14,14 @@ import Footer from "@/components/Footer";
 import styles from "@/styles/pages/_admin.module.scss";
 
 const adminSelectListData = [
-    {
-        id: "users",
-        name: "사용자"
-    },
-    {
-        id: "groups",
-        name: "그룹"
-    },
-    {
-        id: "events",
-        name: "일정"
-    },
+    { id: "users", name: "사용자" },
+    { id: "groups", name: "그룹" },
+    { id: "events", name: "일정" },
 ];
 
 const userSelectListData = [
-    {
-        id: "groups",
-        name: "그룹"
-    },
-    {
-        id: "events",
-        name: "일정"
-    },
+    { id: "groups", name: "그룹" },
+    { id: "events", name: "일정" },
 ];
 
 type SelectType = {
@@ -53,18 +38,23 @@ type ConfirmAlertState = {
 export default function AdminPage() {
     const { data: userData } = useUserQuery();
 
+    const [userListKeyword, setUserListKeyword] = useState<string | null>(null);
+    const [groupsKeyword, setGroupsKeyword] = useState<string | null>(null);
+    const [eventsKeyword, setEventsKeyword] = useState<string | null>(null);
+
     const userListPagination = useCursorPagination();
     const groupsPagination = useCursorPagination();
     const eventsPagination = useCursorPagination();
 
-    const { data: userListData, refetch: refetchUserList } = useUserListQuery(userListPagination.getCursor(), null);
+    const { data: userListData, refetch: refetchUserList } = useUserListQuery(userListPagination.getCursor(), userListKeyword);
 
-    const { data: groupsData, refetch: refetchGroups } = useGroupsQuery(groupsPagination.getCursor(), null);
+    const { data: groupsData, refetch: refetchGroups } = useGroupsQuery(groupsPagination.getCursor(), groupsKeyword);
 
-    const { data: eventsData, refetch: refetchEvents } = useEventsQuery(eventsPagination.getCursor(), null);
+    const { data: eventsData, refetch: refetchEvents } = useEventsQuery(eventsPagination.getCursor(), eventsKeyword);
 
-    const [selectList] = useState<SelectType[]>(userData?.role === "USER" ? userSelectListData : adminSelectListData);
-    const [selectSearch, setSelectSearch] = useState<SelectType>(selectList[0]);
+    const [selectList, setSelectList] = useState<SelectType[]>([{ id: "", name: "" }]);
+    const [selectSearch, setSelectSearch] = useState<SelectType>({ id: "", name: "" });
+    const [isSearching, setIsSearching] = useState<boolean>(false);
     const [keyword, setKeyword] = useState<string>("");
     const [open, setOpen] = useState<boolean>(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -85,20 +75,52 @@ export default function AdminPage() {
             refetchUserList();
             refetchGroups();
             refetchEvents();
+        } else {
+            if (userData.role === "USER") {
+                Promise.resolve().then(() => setSelectList(userSelectListData));
+            } else {
+                Promise.resolve().then(() => setSelectList(adminSelectListData));
+            }
         }
     }, [userData]);
 
     useEffect(() => {
-        if (!userData) {
+        if (selectList.length > 0) {
+            Promise.resolve().then(() => setSelectSearch(selectList[0]));
+        }
+    }, [selectList]);
+
+    const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
             userListPagination.reset();
             groupsPagination.reset();
             eventsPagination.reset();
 
-            refetchUserList();
-            refetchGroups();
-            refetchEvents();
+            if (keyword === "") {
+                setIsSearching(false);
+            } else {
+                setIsSearching(true);
+            }
+
+            switch (selectSearch.id) {
+                case "users":
+                    setUserListKeyword(keyword);
+                    setGroupsKeyword(null);
+                    setEventsKeyword(null);
+                    break;
+                case "groups":
+                    setGroupsKeyword(keyword);
+                    setUserListKeyword(null);
+                    setEventsKeyword(null);
+                    break;
+                case "events":
+                    setEventsKeyword(keyword);
+                    setUserListKeyword(null);
+                    setGroupsKeyword(null);
+                    break;
+            }
         }
-    }, [userData]);
+    };
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -163,12 +185,21 @@ export default function AdminPage() {
                                 </ul>
                             )}
                         </div>
-                        <input className={styles.searchInput} placeholder="검색" value={keyword} onChange={e => setKeyword(e.target.value)} />
+                        <input
+                            className={styles.searchInput} 
+                            placeholder="검색" value={keyword} 
+                            onChange={e => setKeyword(e.target.value)} 
+                            onKeyDown={handleSearch}
+                        />
                     </div>
                 }
                 
 
-                {(userData?.role === "SUPER_ADMIN" || userData?.role === "ADMIN") && userListData?.data &&
+                {
+                    (userData?.role === "SUPER_ADMIN" || userData?.role === "ADMIN") 
+                    && userListData?.data 
+                    && !(isSearching && !userListKeyword)
+                    &&
                     <DataTable
                         name="사용자"
                         data={userListData.data}
@@ -180,7 +211,7 @@ export default function AdminPage() {
                         hasNextPage={userListData.hasNextPage}
                     />
                 }
-                {groupsData?.data && 
+                {groupsData?.data && !(isSearching && !groupsKeyword) && 
                     <DataTable 
                         name="그룹"
                         data={groupsData.data} 
@@ -192,7 +223,7 @@ export default function AdminPage() {
                         hasNextPage={groupsData.hasNextPage}
                     />
                 }
-                {eventsData?.data && 
+                {eventsData?.data && !(isSearching && !eventsKeyword) && 
                     <DataTable 
                         name="일정"
                         data={eventsData.data} 
