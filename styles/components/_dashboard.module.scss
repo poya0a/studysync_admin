@@ -73,16 +73,64 @@
     width: 100%;
     min-width: 300px;
     height: 350px;
-    overflow: hidden;
-    .recharts-bar-rectangle {
+    
+    :global(svg), :global(g) {
+        outline: none;
+    }
+
+    :global(svg:focus),
+    :global(svg:focus-visible),
+    :global(g:focus),
+    :global(g:focus-visible) {
+        outline: none;
+    }
+
+    :global(.recharts-tooltip-wrapper) {
+        pointer-events: none;
+    }
+
+    :global(.recharts-default-tooltip) {
+        background: $background-color;
+        border: 2px solid $main-color;
+        border-radius: var(--radius);
+        padding: 10px;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    :global(.recharts-tooltip-label) {
+        color: $main-color;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    :global(.recharts-tooltip-item) {
+        margin: 10px 0 0 0;
+    }
+
+    :global(.recharts-tooltip-item-name) {
+        color: $text-sub;
+    }
+
+    :global(.recharts-tooltip-item-value) {
+        color: $blue-color;
+    }
+
+    :global(.recharts-tooltip-cursor) {
+        fill: rgba(79, 70, 229, 0.1);
+    }
+
+    :global(.recharts-bar-rectangle), :global(.recharts-line path) {
+        fill: $main-color;
+        stroke: $main-color;
+        color: $main-color;
         transition: all .3s;
     }
-    .recharts-active-bar {
-        transform: scaleY(1.03);
-        transform-origin: bottom;
-        transition: all .3s;
+
+    :global(.recharts-bar-rectangle:hover) {
+        fill: $blue-color;
     }
-    .recharts-layer.recharts-cartesian-axis-tick {
-        display: none;
+
+    :global(.recharts-active-dot) {
+        transition: all .3s;
     }
 }

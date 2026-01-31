@@ -25,15 +25,10 @@ export default function GroupsMembersChart({ data }: Props) {
             <ResponsiveContainer>
                 <BarChart data={data}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip cursor={{ fill: "rgba(79, 70, 229, 0.1)" }} />
-                    <Bar 
-                        dataKey="members"
-                        fill="#b8caff"
-                        activeBar={{ fill: "#00178e" }}
-                        radius={[5, 5, 0, 0]}
-                    />
+                    <XAxis dataKey="name" tickMargin={15} tickLine={false} />
+                    <YAxis allowDecimals={false} tickLine={false} />
+                    <Tooltip />
+                    <Bar dataKey="members" radius={[5, 5, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </section>
