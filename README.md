@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StudySync Admin — 스터디 일정 관리 어드민 대시보드
 
-## Getting Started
+    스터디 일정 관리 캘린더 서비스(StudySync)의 운영 데이터를 효율적으로 관리하기 위한 관리자 전용 어드민 대시보드
 
-First, run the development server:
+**배포 주소**  
+https://studysync-admin.vercel.app
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 주요 기능
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**관리자 인증**
+  - Firebase Auth 기반 관리자 로그인
+  - 관리자 전용 페이지 접근 제어
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**데이터 관리 대시보드**
+  - 사용자 / 그룹 / 일정 데이터 테이블 조회
+  - Firestore 데이터를 기반으로 실시간 관리
+  - 운영 관점에서 필요한 핵심 정보 중심 구성
 
-## Learn More
+**통계 시각화**
+  - Recharts 기반 관리자 통계 대시보드 구현
+  - 일정 생성 추이를 Line Chart로 시각화
+  - 그룹별 인원 분포를 Bar Chart로 제공
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 기술 스택
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Frontend**: Next.js, TypeScript  
+**Data Fetching**: TanStack Query (React Query)  
+**Backend**: Firebase Auth, Firestore  
+**Chart**: Recharts  
+**Styling**: SCSS  
+**Deployment**: Vercel  
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### TanStack Query 기반 서버 상태 관리
+    React Query를 활용한 서버 상태 캐싱 및 비동기 데이터 관리
+    query key 설계를 통해 사용자 / 그룹 / 일정 데이터 명확히 분리
+    불필요한 네트워크 요청 최소화 및 데이터 일관성 유지
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 관리자 관점의 데이터 구조 이해
+    서비스 운영을 고려한 데이터 조회 흐름 설계
+    관리자 화면에 필요한 데이터만 가공하여 전달
+    실제 서비스 운영 시나리오를 반영한 UI 구성
+
+### 데이터 시각화를 통한 운영 효율 개선
+    단순 데이터 나열이 아닌 시각적 통계 제공
+    일정 생성 추이를 통해 서비스 사용 흐름 파악 가능
+    그룹 규모 분포를 통해 서비스 이용 패턴 분석
+
+### 서비스 + 어드민 분리 구조 경험
+    사용자 서비스(StudySync)와 관리자 서비스 분리 운영
+    권한과 목적에 따른 화면 및 로직 분리 설계
+    유지보수와 확장성을 고려한 프로젝트 구조 경험
+
+---
+
+## 프로젝트 목적
+
+- 실제 서비스 운영을 가정한 관리자 도구 설계 경험
+- 서버 상태 관리 라이브러리를 활용한 데이터 패칭 구조 이해
+- 사용자 서비스와 어드민 서비스 분리 아키텍처 경험
