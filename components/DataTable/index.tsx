@@ -6,6 +6,7 @@ import {
     useReactTable,
     ColumnDef,
 } from "@tanstack/react-table";
+import { adminSelectListData } from "@/app/page";
 import styles from "@/styles/components/_dataTable.module.scss";
 
 interface Props<T> {
@@ -15,9 +16,10 @@ interface Props<T> {
     page: number;
     setPage: (page: number) => void;
     hasNextPage: boolean;
+    onRowClick: (type: string, row: T) => void;
 }
 
-export default function DataTable<T>({ name, data, columns, page, setPage, hasNextPage }: Props<T>) {
+export default function DataTable<T>({ name, data, columns, page, setPage, hasNextPage, onRowClick }: Props<T>) {
     const maxPage = hasNextPage ? page + 1 : page;
     const memoColumns = useMemo(() => columns, [columns]);
 
@@ -34,37 +36,45 @@ export default function DataTable<T>({ name, data, columns, page, setPage, hasNe
                 <p>총 {name}: {data?.length ?? 0}</p>
             </div>
             <div className={styles.container}>
-                { data.length > 0 ? 
-                    <table className={styles.dataTable}>
-                        <thead>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                            <tr key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                <th
-                                    key={header.id}
-                                >
-                                    {flexRender(header.column.columnDef.header, header.getContext())}
-                                </th>
+                <div className={styles.tableWrapper}>
+                    { data.length > 0 ? 
+                        <table className={styles.dataTable}>
+                            <thead>
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                <tr key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => (
+                                    <th
+                                        key={header.id}
+                                    >
+                                        {flexRender(header.column.columnDef.header, header.getContext())}
+                                    </th>
+                                    ))}
+                                </tr>
                                 ))}
-                            </tr>
-                            ))}
-                        </thead>
+                            </thead>
 
-                        <tbody>
-                            {table.getRowModel().rows.map((row) => (
-                            <tr key={row.id}>
-                                {row.getVisibleCells().map((cell) => (
-                                <td key={cell.id}>
-                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                </td>
+                            <tbody>
+                                {table.getRowModel().rows.map((row) => (
+                                <tr
+                                    key={row.id}
+                                    onClick={() => {
+                                        const type = adminSelectListData.find((item) => item.name === name)!.id;
+                                        onRowClick(type, row.original)
+                                    }}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                    <td key={cell.id}>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </td>
+                                    ))}
+                                </tr>
                                 ))}
-                            </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    :
-                    <p>데이터가 없습니다.</p>
-                }
+                            </tbody>
+                        </table>
+                        :
+                        <p>데이터가 없습니다.</p>
+                    }
+                </div>
             </div>
             <div className={styles.pagination}>
                 {page > 1 &&

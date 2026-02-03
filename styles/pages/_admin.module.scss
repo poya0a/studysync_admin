@@ -108,45 +108,93 @@
     font-size: 16px;
 }
 
-.popup {
-    position: relative;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.alertOverlay {
     z-index: 999;
-    animation: fadeIn 0.3s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    background-color: rgba(0,0,0,0.3);
 }
 
-.popupContent {
+.alert {
+    min-width: 230px;
     position: fixed;
     top: 50%;
     left: 50%;
-    min-width: 150px;
     transform: translate(-50%, -50%);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-lg);
     background-color: $background-color;
     padding: 20px;
     border-radius: var(--radius);
+    .alertHeader {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        text-align: center;
+        border-bottom: 2px solid #ebf0ff;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 10px;
+    }
     p {
         width: 100%;
         text-align: center;
         font-size: 12px;
-        margin-bottom: 15px;
+        margin: 0;
     }
-    .closeButton {
-        display: block;
-        margin: 30px auto 0 auto;
+    .buttonContainer {
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+}
+
+.buttonContainer {
+    display: flex;
+    justify-content: flex-end;
+    justify-self: center;
+    width: 100%;
+    max-width: 1000px;
+    button {
         width: fit-content;
         font-size: 12px;
         font-weight: 800;
         color: $text-sub;
-        text-decoration: none;
         padding: 10px 20px;
-        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
-        background-color: $sub-color;
         border-radius: var(--radius);
+        background-color: $sub-color;
+        &.groupJoinButton {
+            margin-left: 20px;
+        }
+        &.approveButton {
+            color: $background-color;
+            background-color: $main-color;
+        }
+        &.codeCopyButton {
+            margin-left: 20px;
+            color: $background-color;
+            background-color: $main-color;
+        }
     }
+}
+
+.inputText {
+    min-width: 245px;
+    margin-bottom: 20px;
+    label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 10px;
+        color: $blue-color;
+    }
+    input {
+        width: 100%;
+        font-size: 16px;
+    }
+}
+
+.errorMessage {
+    margin-top: 10px;
+    font-size: 12px;
+    color: $red-color;
 }

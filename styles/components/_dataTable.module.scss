@@ -3,11 +3,10 @@
 .container {
     width: 100%;
     max-width: 1100px;
-    overflow-x: auto;
     margin-bottom: 40px;
     background-color: #ebf0ff;
     border-radius: var(--radius);
-    padding: 20px;
+    padding: 20px 20px 0 20px;
     > p {
         text-align: center;
     }
@@ -29,6 +28,11 @@
         color: $text-sub2;
         font-weight: 700;
     }
+}
+
+.tableWrapper {
+    padding-bottom: 20px;
+    overflow-x: auto;
 }
 
 .dataTable {
@@ -58,7 +62,8 @@
                 line-height: 30px;
                 white-space: nowrap;
                 overflow: hidden;
-                text-overflow: ellipsis; 
+                text-overflow: ellipsis;
+                text-decoration: none;
             }
             &:hover {
                 background-color: $background-color;
