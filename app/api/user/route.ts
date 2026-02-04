@@ -18,7 +18,12 @@ export async function GET(req: NextRequest) {
             return NextResponse.json(null);
         }
 
-        return NextResponse.json(snap.data());
+        const user = {
+            uid: snap.id,
+            ...snap.data(),
+        }
+        
+        return NextResponse.json(user);
     } catch {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }

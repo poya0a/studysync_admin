@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useMemo } from "react";
+import { SketchPicker, ColorResult } from "react-color";
 import { useUserQuery } from "@/hooks/useUserQuery";
 import { useUserListQuery } from "@/hooks/useUserListQuery";
 import { useGroupsQuery } from "@/hooks/useGroupsQuery";
@@ -34,7 +35,7 @@ type SelectType = {
 export const FIELD_CONFIG = {
     email: {
         label: "이메일",
-        type: "email",
+        type: "text",
         editable: false,
     },
     name: {
@@ -54,9 +55,8 @@ export const FIELD_CONFIG = {
     },
     members: {
         label: "멤버",
-        type: "select",
+        type: "array",
         editable: true,
-        options: ["USER", "ADMIN", "SUPER_ADMIN"]
     },
     inviteCode: {
         label: "초대 코드",
@@ -65,16 +65,26 @@ export const FIELD_CONFIG = {
     },
     color: {
         label: "색상",
-        type: "text",
+        type: "color",
         editable: true,
     },
     role: {
         label: "권한",
         type: "select",
         editable: true,
-        options: ["USER", "ADMIN", "SUPER_ADMIN"]
+        options: [
+            { label: "User", value: "USER" },
+            { label: "Admin", value: "ADMIN" },
+            { label: "Super Admin", value: "SUPER_ADMIN" },
+        ]
     },
 };
+
+const EXCLUDED_FIELDS = new Set([
+    "createdAt",
+    "lastLogin",
+    "updatedAt",
+]);
 
 type FieldConfigMap = typeof FIELD_CONFIG;
 type FieldKey = keyof FieldConfigMap;
@@ -89,10 +99,9 @@ type UpdatePopupState = {
     open: boolean;
     type: string;
     selectedRow: UserData | Event | Group | null;
-    onConfirm?: () => void;
 };
 
-type EditableValue = string | number | null;
+type EditableValue = string | number | string[] | null;
 
 export default function AdminPage() {
     const { data: userData } = useUserQuery();
@@ -115,8 +124,14 @@ export default function AdminPage() {
     const [selectSearch, setSelectSearch] = useState<SelectType>({ id: "", name: "" });
     const [isSearching, setIsSearching] = useState<boolean>(false);
     const [keyword, setKeyword] = useState<string>("");
-    const [open, setOpen] = useState<boolean>(false);
-    const ref = useRef<HTMLDivElement>(null);
+    const [searchOpen, setSearchOpen] = useState<boolean>(false);
+    const [optionOpen, setOptionOpen] = useState<boolean>(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+    const optionRef = useRef<HTMLDivElement>(null);
+    const [showColorPicker, setShowColorPicker] = useState<boolean>(false);
+    const [currentColor, setCurrentColor] = useState<string>("#000");
+    const colorPickerRef = useRef<HTMLDivElement>(null);
+    const pendingColorRef = useRef<string | null>(null)
 
     // const [errorMessage, setErrorMessage] = useState<string>("");
     const [showAlert, setShowAlert] = useState<string>("");
@@ -200,9 +215,11 @@ export default function AdminPage() {
 
     const toEditFormData = <T extends object>(data: T): Record<string, EditableValue> => {
         return Object.entries(data).reduce<Record<string, EditableValue>>((acc, [key, value]) => {
+            if (EXCLUDED_FIELDS.has(key)) return acc;
             if (
                 typeof value === "string" ||
                 typeof value === "number" ||
+                (Array.isArray(value) && value.every(v => typeof v === "string"))||
                 value === null
             ) {
                 acc[key] = value;
@@ -211,8 +228,27 @@ export default function AdminPage() {
         }, {});
     };
 
-    const handleRowClick = (type: string, data: UserData | Event | Group) => {
-        if (userData?.role === "SUPER_ADMIN" || userData?.role === "ADMIN" ) {
+    const handleRowClick = (type: string, data: UserData | Group | Event) => {
+        // const isUser = (data: UserData | Event | Group): data is UserData => {
+        //     return "email" in data;
+        // };
+
+        const isGroup = (data: UserData | Event | Group): data is Group => {
+            return "ownerId" in data;
+        };
+
+        const isEvent = (data: UserData | Event | Group): data is Event => {
+            return "uid" in data && "date" in data;
+        };
+
+        if (
+            // 관리자
+            userData?.role === "SUPER_ADMIN"
+            // 관리자 or 본인이 생성한 그룹
+            || (isGroup(data) && (userData?.role === "ADMIN" || data.ownerId === userData?.uid))
+            // 관리자 or 본인이 작성한 일정
+            || (isEvent(data) && (userData?.role === "ADMIN" || data.uid === userData?.uid))
+        ) {
             const editableData = toEditFormData(data);
 
             setFormData(editableData);
@@ -220,65 +256,213 @@ export default function AdminPage() {
             setUpdatePopup({
                 open: true,
                 type,
-                selectedRow: data,
-                onConfirm: () => setUpdatePopup({
-                    open: false,
-                    type: "",
-                    selectedRow: null,
-                })
+                selectedRow: data
             });
+        } else {
+            setShowAlert("수정 권한이 없습니다.");
         }
         
     };
 
     const renderInputByType = (
         key: FieldKey,
-        value: string,
-        onChange: (value: string) => void
+        value: EditableValue,
+        onChange: (value: EditableValue) => void
     ) => {
         const config = FIELD_CONFIG[key];
 
-        if (config.type === "select" && "options" in config) {
+        if (config.type === "color") {
             return (
-                <select
-                    value={value}
-                    disabled={!config.editable}
-                    onChange={(e) => onChange(e.target.value)}
-                >
-                    {config.options.map((opt) => (
-                        <option key={opt} value={opt}>
-                            {opt}
-                        </option>
-                    ))}
-                </select>
+                <div className={styles.colorPicker} ref={colorPickerRef}>
+                    <button
+                        type="button"
+                        style={{ backgroundColor: typeof value === "string" 
+                            ? value
+                            : currentColor
+                        }}
+                        onClick={() => setShowColorPicker((v) => !v)}
+                    ></button>
+                    {showColorPicker && (
+                        <div className={styles.colorPickerContainer}>
+                            <SketchPicker
+                                color={currentColor}
+                                onChange={(color: ColorResult) => {
+                                    pendingColorRef.current = color.hex;
+                                    setCurrentColor(color.hex)
+                                }}
+                                onChangeComplete={(color: ColorResult) => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        color: color.hex
+                                    }));
+                                    setShowColorPicker(false);
+                                }}
+                            />
+                        </div>
+                    )}
+                </div>
+            )
+        }
+
+        if (config.type === "select" && "options" in config) {
+            const selectedOption =
+                typeof value === "string"
+                    ? config.options.find(opt => opt.value === value)
+                    : null;
+            return (
+                <div className={styles.select} ref={optionRef}>
+                    <button
+                        type="button"
+                        className={styles.trigger}
+                        onClick={() => setOptionOpen((v) => !v)}
+                    >
+                        {selectedOption?.label ?? ""}
+                        <span className={`${styles.arrow} ${optionOpen ? styles.active : ""}`}></span>
+                    </button>
+
+                    {optionOpen && (
+                        <ul className={styles.dropdown}>
+                            {config.options.map((opt, i) => (
+                                <li
+                                    key={`search-select-${i}`}
+                                    className={value === opt.value ? styles.active : ""}
+                                    onClick={() => {
+                                        onChange(opt.value);
+                                        setOptionOpen(false);
+                                    }}
+                                >
+                                    {opt.label}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             );
+        }
+
+        if (config.type === "array" && Array.isArray(value)) {
+            return (
+                <div className={styles.array}>
+                    <ul className={styles.arrayContainer}>
+                        {value.map((opt, i) => (
+                            <li
+                                key={`array-option-${i}`}
+                                // className={value === opt ? styles.active : ""}
+                                // onClick={() => {
+                                //     onChange(opt);
+                                //     setOptionOpen(false);
+                                // }}
+                            >
+                                {opt}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )
         }
 
         return (
             <input
+                id={`${key}`}
+                name={key}
                 type={config.type}
-                value={value}
+                value={
+                    typeof value === "string" || typeof value === "number"
+                        ? value
+                        : ""
+                }
                 readOnly={!config.editable}
                 onChange={(e) => onChange(e.target.value)}
             />
         );
     };
 
-    const isChanged = useMemo(() => {
-        return Object.keys(formData).some(
-            (key) => formData[key] !== originalData[key]
+    const handleUpdateConfirm = async () => {
+        if (!isChanged(formData, originalData)) {
+            return setShowAlert("변경된 내용이 없습니다.");
+        }
+
+        const ok = await handleRowUpdate();
+
+        if (ok) {
+            closeUpdatePopup();
+            setShowAlert("수정되었습니다.");
+        } else {
+            setShowAlert("수정에 실패했습니다.");
+        }
+    };
+
+    const handleRowUpdate = async (): Promise<boolean> => {
+        if (!userData) return false;
+        try {
+            const res = await fetch("/api/admin/update", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    type: updatePopup.type,
+                    data: formData,
+                }),
+            });
+
+            return res.ok;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
+
+    const isChanged = (
+        current: Record<string, EditableValue>,
+        original: Record<string, EditableValue>
+    ) => {
+        return Object.keys(current).some(
+            (key) => current[key] !== original[key]
         );
-    }, [formData, originalData]);
+    };
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
-                setOpen(false);
+            if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+                setSearchOpen(false);
             }
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (optionRef.current && !optionRef.current.contains(e.target as Node)) {
+                setOptionOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (!colorPickerRef.current) return
+
+            const target = event.target as Element | null
+            if (!target) return
+
+            const ignore = target.closest("[data-ignore-outside-click]")
+
+            if (!ignore && !colorPickerRef.current.contains(target)) {
+                if (pendingColorRef.current) {
+                    pendingColorRef.current = null
+                }
+
+                setShowColorPicker(false)
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside)
+        return () => document.removeEventListener("mousedown", handleClickOutside)
+    }, [])
 
     useEffect(() => {
         if (showAlert && showAlert !== "") {
@@ -314,17 +498,17 @@ export default function AdminPage() {
                 {!userData && <p className={styles.infoMessage}>로그인 후 이용 가능합니다.</p> }
                 {userData && 
                     <div className={styles.selectContainer}>
-                        <div className={styles.select} ref={ref}>
+                        <div className={styles.select} ref={searchRef}>
                             <button
                                 type="button"
                                 className={styles.trigger}
-                                onClick={() => setOpen((v) => !v)}
+                                onClick={() => setSearchOpen((v) => !v)}
                             >
                                 {selectSearch.name}
-                                <span className={styles.arrow}></span>
+                                <span className={`${styles.arrow} ${searchOpen ? styles.active : ""}`}></span>
                             </button>
 
-                            {open && (
+                            {searchOpen && (
                                 <ul className={styles.dropdown}>
                                     {selectList.map((item, i) => (
                                         <li
@@ -332,7 +516,7 @@ export default function AdminPage() {
                                             className={selectSearch.id === item.id ? styles.active : ""}
                                             onClick={() => {
                                                 setSelectSearch(item);
-                                                setOpen(false);
+                                                setSearchOpen(false);
                                             }}
                                         >
                                             {item.name}
@@ -342,6 +526,8 @@ export default function AdminPage() {
                             )}
                         </div>
                         <input
+                            id="searchInput"
+                            name="searchInput"
                             className={styles.searchInput} 
                             placeholder="검색" value={keyword} 
                             onChange={e => setKeyword(e.target.value)} 
@@ -411,27 +597,30 @@ export default function AdminPage() {
 
                                 const typedKey = key as FieldKey;
                                 const config = FIELD_CONFIG[typedKey];
-
                                 return (
                                     <div key={key} className={styles.inputText}>
-                                    <label>{config.label}</label>
+                                        {config.type === "text"
+                                            ? <label htmlFor={key} className={styles.label}>{config.label}</label>
+                                            : <p className={styles.label}>{config.label}</p>
+                                        }
+                                        
 
-                                    {renderInputByType(
-                                        typedKey,
-                                        String(value ?? ""),
-                                        (newValue) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            [typedKey]: newValue,
-                                        }))
-                                    )}
+                                        {renderInputByType(
+                                            typedKey,
+                                            value,
+                                            (newValue) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                [typedKey]: newValue,
+                                            }))
+                                        )}
                                     </div>
                                 );
                             })}
                         </div>
                         <div className={styles.buttonContainer}>
                             <button className={styles.cancelButton} onClick={closeUpdatePopup}>취소</button>
-                            <button className={styles.approveButton} onClick={updatePopup.onConfirm}>확인</button>
+                            <button className={styles.approveButton} disabled={!isChanged(formData, originalData)} onClick={handleUpdateConfirm}>확인</button>
                         </div>
                     </div>
                 </div>

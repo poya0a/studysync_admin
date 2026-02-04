@@ -69,6 +69,10 @@
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
     border-top: 6px solid $blue-color;
+    transition: all .3s;
+    &.active {
+        transform: rotate(-180deg);
+    }
 }
 
 .dropdown {
@@ -116,6 +120,25 @@
     width: 100vw;
     height: 100dvh;
     background-color: rgba(0,0,0,0.3);
+    .select {
+        min-width: 245px;
+        width: 100%;
+    }
+    .trigger {
+        color: $text;
+        border: 1px solid $text-sub2 !important;
+        box-shadow: none;
+        font-weight: normal;
+    }
+    .dropdown {
+        z-index: 1000;
+    }
+    .arrow {
+        border-top: 6px solid $text-sub2;
+    }
+    .active {
+        color: $text;
+    }
 }
 
 .alert {
@@ -163,6 +186,7 @@
         padding: 10px 20px;
         border-radius: var(--radius);
         background-color: $sub-color;
+        transition: all .3s;
         &.groupJoinButton {
             margin-left: 20px;
         }
@@ -175,21 +199,73 @@
             color: $background-color;
             background-color: $main-color;
         }
+        &:disabled {
+            background-color: $text-sub2;
+        }
     }
 }
 
 .inputText {
-    min-width: 245px;
+    min-width: 252px;
     margin-bottom: 20px;
-    label {
+    label, .label {
         display: block;
         font-size: 14px;
         margin-bottom: 10px;
         color: $blue-color;
+        text-align: left;
     }
     input {
         width: 100%;
         font-size: 16px;
+        &:read-only {
+            background-color: $border-color;
+        }
+    }
+}
+
+.colorPicker {
+    position: relative;
+    min-width: 252xpx;
+    margin-bottom: 20px;
+    width: 100%;
+    height: 40px;
+    padding: 10px 15px;
+    border-radius: var(--radius);
+    border: 1px solid $text-sub2;
+    button {
+        width: 100%;
+        height: 100%;
+        display: block;
+        border-radius: var(--radius);
+    }
+}
+
+.array {
+    width: 100%;
+    max-width: 252px;
+    height: auto;
+    max-height: 122px;
+    border-radius: var(--radius);
+    background-color: $background-color;
+    border: 1px solid $text-sub2;
+}
+
+.arrayContainer {
+    margin: 0;
+    padding: 0;
+    li {
+        padding: 10px 15px;
+        font-size: 14px;
+        line-height: 20px;
+        cursor: pointer;
+        transition: all .3s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
     }
 }
 

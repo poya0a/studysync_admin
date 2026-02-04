@@ -13,6 +13,11 @@ export const userListColumns: ColumnDef<UserData>[] = [
     {
         header: "권한",
         accessorKey: "role",
+        cell: ({ getValue }) =>
+        String(getValue())
+            .toLowerCase()
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, c => c.toUpperCase()),
     },
     {
         header: "최초 로그인",
