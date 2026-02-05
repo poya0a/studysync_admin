@@ -1,6 +1,8 @@
 "use client";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, forwardRef } from "react";
 import { SketchPicker, ColorResult } from "react-color";
+import DatePicker from "react-datepicker";
+import { ko } from "date-fns/locale";
 import { useUserQuery } from "@/hooks/useUserQuery";
 import { useUserListQuery } from "@/hooks/useUserListQuery";
 import { useGroupsQuery } from "@/hooks/useGroupsQuery";
@@ -14,6 +16,7 @@ import Dashboard from "@/components/AdminDashboard/Dashboard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import type { UserData, Event, Group } from "@/types";
+import "react-datepicker/dist/react-datepicker.css";
 import styles from "@/styles/pages/_admin.module.scss";
 
 export const adminSelectListData = [
@@ -50,7 +53,7 @@ export const FIELD_CONFIG = {
     },
     date: {
         label: "날짜",
-        type: "text",
+        type: "date",
         editable: true,
     },
     members: {
@@ -287,13 +290,15 @@ export default function AdminPage() {
                             <SketchPicker
                                 color={currentColor}
                                 onChange={(color: ColorResult) => {
-                                    pendingColorRef.current = color.hex;
-                                    setCurrentColor(color.hex)
+                                    const rgbValue = `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`;
+                                    pendingColorRef.current = rgbValue;
+                                    setCurrentColor(rgbValue)
                                 }}
                                 onChangeComplete={(color: ColorResult) => {
+                                    const rgbValue = `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`;
                                     setFormData(prev => ({
                                         ...prev,
-                                        color: color.hex
+                                        color: rgbValue
                                     }));
                                     setShowColorPicker(false);
                                 }}
@@ -302,6 +307,41 @@ export default function AdminPage() {
                     )}
                 </div>
             )
+        }
+
+        if (config.type === "date") {
+            const selectedDate = value ? new Date(value as string) : null;
+            const CustomDateInput = forwardRef
+                <HTMLButtonElement, {
+                    value?: string;
+                    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+                }>(({ value, onClick }, ref) => (
+                    <button
+                        type="button"
+                        className="dateButton"
+                        onClick={onClick}
+                        ref={ref}
+                    >
+                        {value || "날짜 선택"}
+                    </button>
+                )
+            );
+            CustomDateInput.displayName = "customDateInput";
+
+            return (
+                <DatePicker
+                    selected={selectedDate}
+                    onChange={(date: Date | null) => {
+                        if (date) onChange(date.toISOString().split("T")[0]);
+                        else onChange(null);
+                    }}
+                    dateFormat="yyyy-MM-dd"
+                    locale={ko}
+                    customInput={<CustomDateInput />}
+                    showPopperArrow={false}
+                    calendarClassName="customCalendar"
+                />
+            );
         }
 
         if (config.type === "select" && "options" in config) {
@@ -385,6 +425,7 @@ export default function AdminPage() {
         const ok = await handleRowUpdate();
 
         if (ok) {
+            updateRowData(updatePopup.type);
             closeUpdatePopup();
             setShowAlert("수정되었습니다.");
         } else {
@@ -402,14 +443,34 @@ export default function AdminPage() {
                 },
                 body: JSON.stringify({
                     type: updatePopup.type,
+                    user: userData,
                     data: formData,
                 }),
             });
-
+            
             return res.ok;
         } catch (e) {
             console.error(e);
             return false;
+        }
+    };
+
+    const updateRowData = (type: string) => {
+        switch (type) {
+            case "users":
+                if (!userListData?.data) return;
+                    refetchUserList();
+            break;
+
+            case "groups":
+                if (!groupsData?.data) return;
+                    refetchGroups();
+            break;
+
+            case "events":
+                if (!eventsData?.data) return;
+                    refetchEvents();
+            break;
         }
     };
 
