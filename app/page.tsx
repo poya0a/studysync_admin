@@ -15,7 +15,7 @@ import DataTable from "@/components/DataTable";
 import Dashboard from "@/components/AdminDashboard/Dashboard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import type { UserData, Event, Group } from "@/types";
+import type { UserData, Event, Member, Group } from "@/types";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "@/styles/pages/_admin.module.scss";
 
@@ -104,7 +104,19 @@ type UpdatePopupState = {
     selectedRow: UserData | Event | Group | null;
 };
 
-type EditableValue = string | number | string[] | null;
+type EditableValue = string | number | Member[] | null;
+
+const isUser = (data: UserData | Event | Group): data is UserData => {
+    return "email" in data;
+};
+
+const isGroup = (data: UserData | Event | Group): data is Group => {
+    return "ownerId" in data;
+};
+
+const isEvent = (data: UserData | Event | Group): data is Event => {
+    return "uid" in data && "date" in data;
+};
 
 export default function AdminPage() {
     const { data: userData } = useUserQuery();
@@ -222,7 +234,6 @@ export default function AdminPage() {
             if (
                 typeof value === "string" ||
                 typeof value === "number" ||
-                (Array.isArray(value) && value.every(v => typeof v === "string"))||
                 value === null
             ) {
                 acc[key] = value;
@@ -231,19 +242,18 @@ export default function AdminPage() {
         }, {});
     };
 
-    const handleRowClick = (type: string, data: UserData | Group | Event) => {
-        // const isUser = (data: UserData | Event | Group): data is UserData => {
-        //     return "email" in data;
-        // };
+    const fetchGroupMembers = async (groupId: string) => {
+        try {
+            const res = await fetch(`/api/members?groupId=${groupId}`);
+            if (!res.ok) return [];
+            return await res.json();
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    };
 
-        const isGroup = (data: UserData | Event | Group): data is Group => {
-            return "ownerId" in data;
-        };
-
-        const isEvent = (data: UserData | Event | Group): data is Event => {
-            return "uid" in data && "date" in data;
-        };
-
+    const handleRowClick = async (type: string, data: UserData | Group | Event) => {
         if (
             // 관리자
             userData?.role === "SUPER_ADMIN"
@@ -253,6 +263,11 @@ export default function AdminPage() {
             || (isEvent(data) && (userData?.role === "ADMIN" || data.uid === userData?.uid))
         ) {
             const editableData = toEditFormData(data);
+            
+            if (isGroup(data)) {
+                const members = await fetchGroupMembers(data.id);
+                editableData.members = members;
+            }
 
             setFormData(editableData);
             setOriginalData(editableData);
@@ -387,13 +402,43 @@ export default function AdminPage() {
                         {value.map((opt, i) => (
                             <li
                                 key={`array-option-${i}`}
-                                // className={value === opt ? styles.active : ""}
-                                // onClick={() => {
-                                //     onChange(opt);
-                                //     setOptionOpen(false);
-                                // }}
                             >
-                                {opt}
+                                <span>{opt.name}</span>
+                                {updatePopup.selectedRow &&
+                                (isGroup(updatePopup.selectedRow) &&
+                                    (userData?.role !== "SUPER_ADMIN" &&
+                                        updatePopup.selectedRow.ownerId === userData?.uid
+                                    ) &&
+                                updatePopup.selectedRow.ownerId !== opt.uid
+                                ) &&
+                                    (
+                                        <button
+                                            type="button"
+                                            className={styles.removeMemberButton}
+                                            onClick={() => {
+                                                setConfirmAlert({
+                                                    open: true,
+                                                    message: `${opt.name}을(를) 삭제하시겠습니까?`,
+                                                    onConfirm: () => {
+                                                        setFormData(prev => {
+                                                            const members = Array.isArray(prev.members)
+                                                                ? (prev.members as Member[])
+                                                                : [];
+
+                                                            return {
+                                                                ...prev,
+                                                                members: members.filter(m => m.uid !== opt.uid),
+                                                            };
+                                                        });
+                                                        closeConfirmAlert();
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            삭제
+                                        </button>
+                                    )
+                                }
                             </li>
                         ))}
                     </ul>

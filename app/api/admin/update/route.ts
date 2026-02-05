@@ -2,14 +2,14 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
-import type { UserData } from "@/types";
+import type { UserData, Member } from "@/types";
 
 type UpdateType = "users" | "groups" | "events";
 
 type UpdateRequestBody = {
     type: UpdateType;
     user: UserData;
-    data: Record<string, string | number | string[]>;
+    data: Record<string, string | number | string[] | Member[]>;
 };
 
 const sanitizeForFirestore = (
@@ -38,6 +38,13 @@ const sanitizeForFirestore = (
             },
         {}
     );
+};
+
+const normalizeMembers = (members: Member[] | string[]): string[] => {
+    return members
+        .map(m => (typeof m === "string" ? m : m.uid))
+        .filter(Boolean)
+        .sort();
 };
 
 export async function PATCH(req: NextRequest) {
@@ -73,15 +80,30 @@ export async function PATCH(req: NextRequest) {
         const prevData = snap.data()!;
 
         const diffData = Object.entries(data).reduce<
-            Record<string, string | number | string[]>
+            Record<string, string | number | string[] | Member[]>
         >((acc, [key, value]) => {
             if (
                 (type === "groups" && key === "id") || 
                 (type === "events" && key === "id")
             ) return acc;
             const prevValue = prevData[key];
+
+            if (key === "members" && Array.isArray(value)) {
+                const nextMembers = normalizeMembers(value as Member[]);
+                const prevMembers = normalizeMembers(
+                    Array.isArray(prevValue) ? prevValue : []
+                );
+
+                if (JSON.stringify(prevMembers) !== JSON.stringify(nextMembers)) {
+                    acc.members = nextMembers;
+                }
+                return acc;
+            }
+
             if (JSON.stringify(prevValue) === JSON.stringify(value)) return acc;
+            
             acc[key] = value;
+            
             return acc;
         }, {});
 

@@ -314,16 +314,31 @@
     margin: 0;
     padding: 0;
     li {
-        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        gap: 40px;
+        padding: 5px 15px;
         font-size: 14px;
-        line-height: 20px;
-        cursor: pointer;
         transition: all .3s;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
         &:hover {
             background-color: rgba(0, 0, 0, 0.05);
+        }
+        span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 30px;
+        }
+        .removeMemberButton {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 30px;
+            border-radius: var(--radius);
+            background-color: $blue-color;
+            color: $background-color;
+            padding: 0;
         }
     }
 }

@@ -23,12 +23,18 @@ export type Event = EventBase & {
     authorName?: string;
 };
 
+export type Member = {
+    uid: string;
+    name: string;
+};
+
 export type Group = {
     id: string;
     ownerId: string;
     name: string;
     type: GroupType;
     inviteCode?: string;
+    members : Member[];
 };
 
 export const PERSONAL_GROUP: Group = {
@@ -36,4 +42,5 @@ export const PERSONAL_GROUP: Group = {
     ownerId: "",
     name: "개인 일정",
     type: "personal",
+    members: []
 };
