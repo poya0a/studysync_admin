@@ -63,7 +63,8 @@
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                text-decoration: none;
+                text-decoration: none !important;
+                -webkit-text-decoration: none !important;
             }
             &:hover {
                 background-color: $background-color;
